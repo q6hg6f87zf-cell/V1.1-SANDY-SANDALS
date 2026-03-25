@@ -1751,30 +1751,9 @@ function getPlayerStats(p) {
   return finalStats;
 }
 
-  return finalStats;
 
-          }
-        }
-      }
-    });
-  }
-  
-  let finalStats = {};
-  for (let s in base) {
-     let calc = base[s] + raceStats[s] + (s === primary ? traitBonus : 0);
-     
-     if (s === 'DEF') calc += gearDefBonus;
-     if (s === 'SPD') calc += gearSpdBonus;
-     
-     if (p.companion && p.companion.status === 'active') {
-       const cData = COMPANION_TYPES[p.companion.type];
-       if (cData.statBuff && cData.statBuff[s]) calc += cData.statBuff[s];
-     }
+function rangeLabel(r) { return r[0] === r[1] ? String(r[0]) : r[0]+'-'+r[1]; }
 
-     finalStats[s] = (p.statOverrides && p.statOverrides[s] !== undefined) ? p.statOverrides[s] : calc;
-  }
-  return finalStats;
-}
 
 
 
