@@ -1721,6 +1721,18 @@ function getPlayerStats(p) {
             if (defMatch) gearDefBonus += parseInt(defMatch[1]);
             if (foundArmor.effect.includes("-1 SPD")) gearSpdBonus -= 1;
             if (foundArmor.effect.includes("-2 SPD")) gearSpdBonus -= 2;
+               if (p.companion && p.companion.status === 'active') {
+       const cData = COMPANION_TYPES[p.companion.type];
+       if (cData.statBuff && cData.statBuff[s]) calc += cData.statBuff[s];
+     }
+     
+     // ✦ NEW: Hall of Fame +3 Charisma Buff
+     if (p.isHoF && s === 'CHA') calc += 3;
+
+     finalStats[s] = (p.statOverrides && p.statOverrides[s] !== undefined) ? p.statOverrides[s] : calc;
+  }
+  return finalStats;
+
           }
         }
       }
