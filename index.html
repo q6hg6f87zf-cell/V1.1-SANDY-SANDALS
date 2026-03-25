@@ -2947,7 +2947,8 @@ ${Object.entries(LOG_TYPES).map(([k,t])=>`<button class="btn btn-sm" style="font
           <span style="font-weight:bold;font-size:0.86rem;color:var(--purple-light)">Session ${sNum}</span>
           <div style="font-size:0.6rem;color:var(--dim);font-family:Arial,sans-serif;text-align:right">${startE?`<div>Started ${startE.time}</div>`:''}${endE?`<div>Ended ${endE.time}</div>`:''}${allS.length} entries</div>
         </div>
-        ${entries.map(e=>{const t=LOG_TYPES[e.type]||LOG_TYPES.note;return`<div class="log-entry">
+        ${entries.map(e=>{const t=LOG_TYPES[e.type]||LOG_TYPES.note;return`<div class="log-entry ${e.isHoF ? 'hof-log' : ''}">
+
           <div class="log-time">${e.time||''}</div>
           <div class="log-icon">${t.icon}</div>
           <div class="log-body">
