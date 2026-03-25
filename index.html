@@ -8,69 +8,79 @@
 <title>The Hollow Realm — GM Suite</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+  :root {
+    --dim: #c8c0e8;
+    --dimmer: #6a638b;
+    --text: #e8e0ff;
+    --purple: #8a5adc;
+    --purple-light: #b388ff;
+    --gold: #ffd54f;
+    --red: #ef5350;
+    --green: #66bb6a;
+    --blue: #4fc3f7;
+    --card: rgba(10, 8, 30, 0.85);
+    --border: rgba(138, 90, 220, 0.3);
+    --border-glow: rgba(138, 90, 220, 0.6);
+  }
+
+  .player-card {
+    background: rgba(10, 8, 30, 0.85) !important;
+    backdrop-filter: blur(15px) !important; 
+    -webkit-backdrop-filter: blur(15px) !important;
+    border: 1px solid rgba(196, 130, 72, 0.3) !important;
+  }
+
+  .stone-card {
+    background: rgba(15, 15, 20, 0.95) !important;
+    border: 1px solid #444 !important;
+    filter: grayscale(0.7);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+  }
+
+  .hof-card {
+    background: linear-gradient(135deg, rgba(40,30,10,0.9), rgba(10,8,30,0.95)) !important;
+    border: 1px solid var(--gold) !important;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.2) !important;
+  }
+
+  .hof-log {
+    background: linear-gradient(90deg, rgba(212,175,55,0.15), transparent) !important;
+    border-left: 3px solid var(--gold) !important;
+    animation: shine 2s infinite alternate;
+  }
+
+  @keyframes shine {
+    0% { box-shadow: inset 5px 0 10px rgba(212,175,55,0.1); }
+    100% { box-shadow: inset 15px 0 20px rgba(212,175,55,0.4); }
+  }
+
+  .header-badge {
+    background: linear-gradient(135deg, #c48248, #8b5a2b) !important;
+    box-shadow: 0 0 12px rgba(196, 130, 72, 0.5) !important;
+    border: 1px solid #e2a870 !important;
+  }
+
+  .btn-purple {
+    background: linear-gradient(135deg, #c48248, #8b5a2b) !important;
+    border: 1px solid #e2a870 !important;
+    box-shadow: 0 0 15px rgba(196, 130, 72, 0.4) !important;
+  }
+
+  .tab.active {
+    color: #e2a870 !important;
+    border-bottom-color: #c48248 !important;
+  }
+
+  .arsenal-tab.active {
+    border-color: #c48248 !important;
+    background: rgba(196, 130, 72, 0.15) !important;
+    color: #e2a870 !important;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   
+  body {
 
-    :root {
-  /* Brightens the small text (like @usernames and locations) so it doesn't get lost */
-  --dim: #c8c0e8; 
-}
-
-.player-card {
-  background: rgba(10, 8, 30, 0.85) !important;
-  backdrop-filter: blur(15px) !important; 
-  -webkit-backdrop-filter: blur(15px) !important;
-  border: 1px solid rgba(196, 130, 72, 0.3) !important;
-}
-/* --- THE PANTHEON CSS --- */
-.stone-card {
-  background: rgba(15, 15, 20, 0.95) !important;
-  border: 1px solid #444 !important;
-  filter: grayscale(0.7);
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-}
-.hof-card {
-  background: linear-gradient(135deg, rgba(40,30,10,0.9), rgba(10,8,30,0.95)) !important;
-  border: 1px solid var(--gold) !important;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.2) !important;
-}
-.hof-log {
-  background: linear-gradient(90deg, rgba(212,175,55,0.15), transparent) !important;
-  border-left: 3px solid var(--gold) !important;
-  animation: shine 2s infinite alternate;
-}
-@keyframes shine {
-  0% { box-shadow: inset 5px 0 10px rgba(212,175,55,0.1); }
-  100% { box-shadow: inset 15px 0 20px rgba(212,175,55,0.4); }
-}
-
-
-
-
-    .header-badge {
-  background: linear-gradient(135deg, #c48248, #8b5a2b) !important;
-  box-shadow: 0 0 12px rgba(196, 130, 72, 0.5) !important;
-  border: 1px solid #e2a870 !important;
-}
-
-.btn-purple {
-  background: linear-gradient(135deg, #c48248, #8b5a2b) !important;
-  border: 1px solid #e2a870 !important;
-  box-shadow: 0 0 15px rgba(196, 130, 72, 0.4) !important;
-}
-
-.tab.active {
-  color: #e2a870 !important;
-  border-bottom-color: #c48248 !important;
-}
-
-.arsenal-tab.active {
-  border-color: #c48248 !important;
-  background: rgba(196, 130, 72, 0.15) !important;
-  color: #e2a870 !important;
-}
-
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body {
   font-family: 'Inter', sans-serif;
   background: #050510; /* Solid dark base */
   color: #e8e0ff; 
