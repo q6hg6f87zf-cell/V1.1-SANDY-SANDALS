@@ -1721,7 +1721,20 @@ function getPlayerStats(p) {
             if (defMatch) gearDefBonus += parseInt(defMatch[1]);
             if (foundArmor.effect.includes("-1 SPD")) gearSpdBonus -= 1;
             if (foundArmor.effect.includes("-2 SPD")) gearSpdBonus -= 2;
-               if (p.companion && p.companion.status === 'active') {
+          }
+        }
+      }
+    });
+  }
+  
+  let finalStats = {};
+  for (let s in base) {
+     let calc = base[s] + raceStats[s] + (s === primary ? traitBonus : 0);
+     
+     if (s === 'DEF') calc += gearDefBonus;
+     if (s === 'SPD') calc += gearSpdBonus;
+     
+     if (p.companion && p.companion.status === 'active') {
        const cData = COMPANION_TYPES[p.companion.type];
        if (cData.statBuff && cData.statBuff[s]) calc += cData.statBuff[s];
      }
@@ -1731,6 +1744,9 @@ function getPlayerStats(p) {
 
      finalStats[s] = (p.statOverrides && p.statOverrides[s] !== undefined) ? p.statOverrides[s] : calc;
   }
+  return finalStats;
+}
+
   return finalStats;
 
           }
