@@ -3727,10 +3727,66 @@ function rmConsequence(playerId, index) {
 
 
 function markDead(playerId) {
-  if(!confirm("Mark this player as permanently DEAD?")) return;
   const p = STATE.players.find(x => x.id === playerId);
-  if(p) { p.isDead = true; p.hp = 0; addLog({type:'death', who:p.charname, what:'Character died.'}); saveAll(); render(); }
+  if(!p) return;
+  if(!confirm("Mark " + p.charname + " as permanently DEAD?\nThe Hollow will reclaim their wealth.")) return;
+  
+  const cause = prompt("Cause of Death? (e.g., Box Battle, Raid Fatality)") || "Claimed by the Void";
+  const eulogy = prompt("Epitaph / Final Words:") || "Forgotten by the Realm.";
+  
+  // 1. The Hollow reclaims their wealth
+  const lostWealth = p.walletBalance || 0;
+  p.walletBalance = 0;
+  if (lostWealth > 0) {
+    addLog({type:'consequence', who:'The Hollow', what:`Reclaimed ${lostWealth.toLocaleString()}c from the fallen ${p.charname}.`});
+  }
+  
+  // 2. Orphan their companion
+  if (p.companion) { 
+    if (!STATE.orphanedCompanions) STATE.orphanedCompanions = [];
+    STATE.orphanedCompanions.push({
+      originalOwner: p.charname,
+      type: p.companion.type,
+      location: STATE.mapLocation || 'Unknown Location',
+      time: new Date().toLocaleDateString()
+    });
+    addLog({type:'note', who:'World Map', what:`${p.charname}'s ${p.companion.type} is now wandering as an Orphaned Soul.`});
+    p.companion = null; // Strip the pet from the dead player
+  }
+  
+  p.isDead = true;
+  p.hp = 0;
+  p.causeOfDeath = cause;
+  p.eulogy = eulogy;
+  
+  addLog({type:'death', who:p.charname, what:`Fell in battle. Cause: ${cause}.`});
+  STATE.selectedPlayer = null; // Close modal
+  saveAll(); render();
 }
+
+function inductHoF(playerId) {
+  const p = STATE.players.find(x => x.id === playerId);
+  if(!p) return;
+  
+  if(p.isHoF) {
+    if(confirm(`Remove ${p.charname} from the Hall of Fame?`)) { 
+      p.isHoF = false; 
+      saveAll(); render(); 
+    }
+    return;
+  }
+  
+  const citation = prompt(`Why is ${p.charname} a Legend? (e.g., Survivor of the 100k Battle)`);
+  if(!citation) return;
+  
+  p.isHoF = true;
+  p.hofCitation = citation;
+  
+  // The Animated Log Entry
+  addLog({type:'gift', who:'System', what:`👑 HALL OF FAME INDUCTION: ${p.charname}. "${citation}"`, isHoF: true});
+  saveAll(); render();
+}
+
 
 function resurrect(playerId) {
   if(!confirm("Resurrect this player?")) return;
