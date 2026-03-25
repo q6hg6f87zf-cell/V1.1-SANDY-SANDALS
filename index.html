@@ -2284,10 +2284,12 @@ function renderPlayerModal() {
     <button class="btn btn-sm" onclick="updatePlayer(${p.id},{giftPowerUsed:${!p.giftPowerUsed}});render()">${p.giftPowerUsed?'Reset':'Mark Used'}</button> 
   </div> 
 
-  <div style="display:flex;gap:8px;flex-wrap:wrap"> 
+    <div style="display:flex;gap:8px;flex-wrap:wrap"> 
+    <button class="btn btn-sm" style="border-color:var(--gold); color:var(--gold); background:rgba(212,175,55,0.1)" onclick="inductHoF(${p.id})">👑 ${p.isHoF ? 'Remove Legend' : 'Induct Legend'}</button>
     ${p.isDead?`<button class="btn" style="background:var(--gold);color:#000" onclick="resurrect(${p.id})">⚗ Resurrect</button>`:`<button class="btn btn-red" onclick="markDead(${p.id})">☠ Mark Dead</button>`} 
     <button class="btn" style="background:rgba(20,16,50,0.9);color:var(--dim);border:1px solid var(--border)" onclick="STATE.selectedPlayer=null;render()">Close</button> 
   </div>
+
 </div>`; //
 }//
 
