@@ -1890,8 +1890,10 @@ const TABS=[
   {id:'dice',label:'🎲 Dice'},
   {id:'battle',label:'⚔️ Battle'},
   {id:'raids',label:'⚔️ Raids'},
+  {id:'bank',label:'🏦 Bank'},
   {id:'log',label:'⏱ Log'}
 ];
+
 
 
 function render(){
@@ -1902,19 +1904,21 @@ function render(){
   tb.innerHTML = TABS.map(t => `<div class="tab${STATE.tab === t.id ? ' active' : ''}" onclick="STATE.tab='${t.id}';render()">${t.label}</div>`).join('');
   pn.className = 'panel fade-in';
 
-    switch(STATE.tab){
+        switch(STATE.tab){
     case 'players':  pn.innerHTML=renderPlayers();break;
     case 'create':   pn.innerHTML=renderCreate();break;
     case 'npcs':     pn.innerHTML=renderNPCs();break;
     case 'villains': pn.innerHTML=renderVillains();break;
     case 'dice':     pn.innerHTML=renderDice();break;
     case 'battle':   pn.innerHTML=renderBattle();break;
+    case 'raids':    pn.innerHTML=renderRaids();break;
+    case 'bank':     pn.innerHTML=renderBank();break;
     case 'log':      pn.innerHTML=renderLog();break;
     case 'map':      pn.innerHTML=renderMap();break;
-    case 'raids':    pn.innerHTML=renderRaids();break;
     case 'compendium': pn.innerHTML=renderCompendium();break;
     default:         pn.innerHTML=renderPlayers();
   }
+
 
 
   const pm=document.getElementById('player-modal');
@@ -2645,38 +2649,40 @@ ${spin?'Rolling...':'ROLL THE DICE'}
   </div>`:''}`;
 }
 
+// ═══════════════════════════════════════════════════
+// BOX BATTLE (THE TOLL & ECONOMY)
+// ═══════════════════════════════════════════════════
 function renderBattle() {
   const mins = Math.floor(STATE.battleTime / 60);
   const secs = (STATE.battleTime % 60).toString().padStart(2, '0');
   const pctBar = Math.min(100, Math.max(0, (STATE.battleTime / 180) * 100));
 
-  // Renamed to BATTLE_TIERS to prevent "Redeclaration" crashes
-  const BATTLE_TIERS = [
-    {min:0,max:4999,tier:'⚠ MINOR',cons:'Lose title OR stat debuff',color:'#4caf50'},
-    {min:5000,max:9999,tier:'⚔ MODERATE',cons:'Cursed 2 sessions OR item stolen',color:'#ff9800'},
-    {min:10000,max:19999,tier:'💀 MAJOR',cons:'Exile OR servant',color:'#ef5350'},
-    {min:20000,max:44999,tier:'☠ SEVERE',cons:'Killed OR curse+exile+theft',color:'#b71c1c'},
+  // The Narrative Consequence based on the GAP
+  const THE_TOLL_TIERS = [
+    {min:0,max:4999,tier:'⚠ MINOR TOLL',cons:'Lose title OR stat debuff',color:'#4caf50'},
+    {min:5000,max:9999,tier:'⚔ MODERATE TOLL',cons:'Cursed 2 sessions OR item stolen',color:'#ff9800'},
+    {min:10000,max:19999,tier:'💀 MAJOR TOLL',cons:'Exile OR servant',color:'#ef5350'},
+    {min:20000,max:44999,tier:'☠ SEVERE TOLL',cons:'Killed OR curse+exile+theft',color:'#b71c1c'},
     {min:45000,max:Infinity,tier:'👁 OP CONTROL',cons:'Winner narrates anything — one session',color:'#ce93d8'}
   ];
 
   const c1 = parseInt(STATE.battleCoins1) || 0;
   const c2 = parseInt(STATE.battleCoins2) || 0;
-  const diff = Math.abs(c1 - c2);
-  const currentTier = BATTLE_TIERS.find(t => diff >= t.min && diff <= t.max) || BATTLE_TIERS[0];
+  const totalCoins = c1 + c2;
+  const gap = Math.abs(c1 - c2);
+  
+  // Economy Math
+  const hostCut = Math.floor(totalCoins * 0.24); // Your 24% Multi-Guest Cut
+  const isP1Winner = c1 > c2;
+  const winnerScore = isP1Winner ? c1 : c2;
+  const winnerPct = winnerScore >= 5000 ? 0.60 : 0.40;
+  const winnerDeposit = Math.floor(hostCut * winnerPct);
+  const houseCut = hostCut - winnerDeposit;
+
+  const currentToll = THE_TOLL_TIERS.find(t => gap >= t.min && gap <= t.max) || THE_TOLL_TIERS[0];
 
   const p1 = STATE.players.find(p => p.charname === STATE.battleP1);
   const p2 = STATE.players.find(p => p.charname === STATE.battleP2);
-
-  let p1UI = p1 ? `<div style="font-size:0.65rem; color:var(--dim); margin-top:4px">${CLASS_ICON[p1.cls]||''} ${p1.cls} | 🔒 Lockbox Lv.${p1.quarters?.lockbox||0}</div>` : '';
-  let p2UI = p2 ? `<div style="font-size:0.65rem; color:var(--dim); margin-top:4px">${CLASS_ICON[p2.cls]||''} ${p2.cls} | 🔒 Lockbox Lv.${p2.quarters?.lockbox||0}</div>` : '';
-
-  let theftBtn = '';
-  if (diff >= 5000 && c1 !== c2) {
-    const loserObj = c1 > c2 ? p2 : p1;
-    if (loserObj) {
-      theftBtn = `<button class="btn btn-sm btn-red" style="margin-top:10px; width:100%; font-size:0.75rem" onclick="resolveTheft('${loserObj.charname}')">🎲 Roll Theft Check vs Lockbox</button>`;
-    }
-  }
 
   return `
     <div class="card-glow" style="border-color:var(--purple); background:rgba(20,10,30,0.8)">
@@ -2685,43 +2691,48 @@ function renderBattle() {
         <div style="text-align:center">
           <label class="label">Fighter 1</label>
           <input class="input" style="text-align:center" value="${esc(STATE.battleP1)}" oninput="STATE.battleP1=this.value; render()" placeholder="@username">
-          ${p1UI}
           <input class="input" style="margin-top:12px; font-weight:bold; color:var(--gold); text-align:center; font-size:1.1rem" type="number" value="${STATE.battleCoins1}" oninput="STATE.battleCoins1=this.value; render()" placeholder="0">
         </div>
         <div style="font-weight:bold; color:var(--dim); text-align:center; font-style:italic; margin-top:30px">VS</div>
         <div style="text-align:center">
           <label class="label">Fighter 2</label>
           <input class="input" style="text-align:center" value="${esc(STATE.battleP2)}" oninput="STATE.battleP2=this.value; render()" placeholder="@username">
-          ${p2UI}
           <input class="input" style="margin-top:12px; font-weight:bold; color:var(--gold); text-align:center; font-size:1.1rem" type="number" value="${STATE.battleCoins2}" oninput="STATE.battleCoins2=this.value; render()" placeholder="0">
         </div>
       </div>
       <div style="text-align:center; margin-bottom:16px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05)">
         <div style="font-size:2.8rem; font-weight:bold; color:#fff; font-family:Georgia,serif; letter-spacing:3px; text-shadow:0 0 15px var(--purple)">${mins}:${secs}</div>
-        ${renderHearts(p.hp, p.maxHp)}
-
+        <div class="hp-bar-wrap" style="height:8px; margin:12px 0"><div class="hp-bar" style="width:${pctBar}%; background:${pctBar>60?'var(--green)':pctBar>30?'#ff9800':'var(--red)'}"></div></div>
         <div style="display:flex; gap:8px; justify-content:center">
           <button class="btn btn-purple" style="font-size:1.1rem; padding:8px 30px" onclick="toggleBattle()">${STATE.battleRunning ? '⏸ Pause' : '▶ Start'}</button>
           <button class="btn btn-sm" style="background:rgba(255,255,255,0.1)" onclick="resetBattle()">↺ Reset</button>
         </div>
       </div>
-      ${c1 + c2 > 0 ? `
-        <div style="background:${currentTier.color}15; border:1px solid ${currentTier.color}60; border-radius:8px; padding:12px; text-align:center">
-          <div style="font-weight:bold; color:${currentTier.color}; font-size:1.2rem; margin-bottom:4px; text-transform:uppercase">${currentTier.tier}</div>
-          <div style="font-size:0.75rem; color:#fff">${currentTier.cons}</div>
-          ${c1 !== c2 ? `
-            <div style="font-size:0.8rem; color:var(--gold); margin-top:8px; padding:6px; background:rgba(0,0,0,0.5); border-radius:4px">
-              🏆 Leading: <b>${esc(c1 > c2 ? STATE.battleP1 || 'P1' : STATE.battleP2 || 'P2')}</b> <span style="color:var(--dim)">(Gap: ${diff.toLocaleString()})</span>
-            </div>
-            ${theftBtn}
-            <button class="btn btn-sm btn-green" style="margin-top:8px; width:100%" onclick="logBattleResult()">📝 Log Official Result</button>
-          ` : ``}
+      
+      ${totalCoins > 0 && c1 !== c2 ? `
+        <div style="background:rgba(0,0,0,0.5); border:1px solid var(--gold); border-radius:8px; padding:12px; margin-bottom:12px">
+          <div style="font-size:0.65rem; color:var(--dim); text-transform:uppercase; margin-bottom:6px">💰 Economy (Host Cut: 24%)</div>
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px">
+            <span style="color:#bbb">Liquid Prize Pool:</span> <b style="color:var(--gold)">${hostCut.toLocaleString()}c</b>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:bold">
+            <span style="color:#fff">Winner Bank Deposit (${winnerPct * 100}%):</span> <span style="color:var(--green)">+${winnerDeposit.toLocaleString()}c</span>
+          </div>
+        </div>
+
+        <div style="background:${currentToll.color}15; border:1px solid ${currentToll.color}60; border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:0.65rem; color:var(--dim); text-transform:uppercase; margin-bottom:4px">🗡️ Narrative (Gap: ${gap.toLocaleString()})</div>
+          <div style="font-weight:bold; color:${currentToll.color}; font-size:1.2rem; margin-bottom:4px; text-transform:uppercase">${currentToll.tier}</div>
+          <div style="font-size:0.75rem; color:#fff">${currentToll.cons}</div>
+          
+          <button class="btn btn-sm btn-green" style="margin-top:12px; width:100%" onclick="logBattleResult()">📝 Auto-Deposit & Log Result</button>
         </div>
       ` : ''}
     </div>
+    
     <div class="card">
-      <div class="section-title">Consequence Ladder</div>
-      ${BATTLE_TIERS.map(t => `
+      <div class="section-title">The Toll (Gap Consequences)</div>
+      ${THE_TOLL_TIERS.map(t => `
         <div style="display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.04)">
           <div style="min-width:12px; height:12px; border-radius:50%; background:${t.color}"></div>
           <div style="flex:1"><div style="font-weight:bold; font-size:0.74rem; color:${t.color}">${t.tier}</div><div style="font-size:0.63rem; color:var(--dim)">${t.cons}</div></div>
@@ -2730,6 +2741,41 @@ function renderBattle() {
       `).join('')}
     </div>`;
 }
+
+function logBattleResult() {
+  const c1 = parseInt(STATE.battleCoins1) || 0;
+  const c2 = parseInt(STATE.battleCoins2) || 0;
+  if (c1 === c2) return alert("It's a tie! No clear winner.");
+  
+  const isP1Winner = c1 > c2;
+  const winnerName = isP1Winner ? STATE.battleP1 : STATE.battleP2;
+  const loserName = isP1Winner ? STATE.battleP2 : STATE.battleP1;
+  const winnerScore = isP1Winner ? c1 : c2;
+  
+  const hostCut = Math.floor((c1 + c2) * 0.24);
+  const winnerPct = winnerScore >= 5000 ? 0.60 : 0.40;
+  const winnerDeposit = Math.floor(hostCut * winnerPct);
+  
+  // Find the winning player object to deposit coins
+  const winnerObj = STATE.players.find(p => p.charname === winnerName);
+  
+  if (winnerObj) {
+      initWallet(winnerObj);
+      winnerObj.walletBalance += winnerDeposit;
+      winnerObj.transactions.unshift({ date: new Date().toLocaleDateString(), amount: winnerDeposit, reason: `Box Battle Victory vs ${loserName}` });
+  }
+
+  if(STATE.sessionActive) {
+    addLog({type:'battle', who:'System', what:`BATTLE ENDED: ${winnerName} defeated ${loserName}!`});
+    addLog({type:'gift', who:winnerName, what:`Banked +${winnerDeposit.toLocaleString()}c from the Box Battle prize pool.`});
+    
+    alert(`Success!\n\n${winnerName} defeated ${loserName}.\n${winnerDeposit.toLocaleString()} coins have been deposited directly into ${winnerName}'s Bank Wallet.`);
+    saveAll(); render();
+  } else {
+    alert("Start a live session to log this battle to the timeline.");
+  }
+}
+
 
 
 
@@ -2956,6 +3002,115 @@ function renderMapLocation() {
 // ═══════════════════════════════════════════════════
 // REMAINING UI TAB RENDERERS
 // ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// MOON SQUAD BANK SYSTEM
+// ═══════════════════════════════════════════════════
+function initWallet(p) {
+  if (p.walletBalance === undefined) p.walletBalance = 0;
+  if (!p.transactions) p.transactions = [];
+}
+
+function adjWallet(playerId, amount, reason) {
+  const p = STATE.players.find(x => x.id === playerId);
+  if(!p) return;
+  initWallet(p);
+  p.walletBalance += amount;
+  p.transactions.unshift({ date: new Date().toLocaleDateString(), amount: amount, reason: reason });
+  if(STATE.sessionActive) addLog({type:'gift', who:p.charname, what:`Wallet: ${amount > 0 ? '+' : ''}${amount.toLocaleString()}c (${reason})`});
+  saveAll(); render();
+}
+
+function processWithdrawal(playerId) {
+  const p = STATE.players.find(x => x.id === playerId);
+  if(!p) return;
+  initWallet(p);
+  
+  const amountStr = prompt(`Enter amount for ${p.charname} to withdraw\n(Min: 5,000 | Max: 44,999):`);
+  if(!amountStr) return;
+  const amount = parseInt(amountStr);
+  
+  if(isNaN(amount) || amount < 5000 || amount > 44999) return alert("Invalid amount. Must be between 5,000 and 44,999.");
+  if(p.walletBalance < amount) return alert(`Insufficient funds. ${p.charname} only has ${p.walletBalance.toLocaleString()}c.`);
+  
+  // 7-Day Cooldown Check
+  const now = Date.now();
+  const cooldownMs = 7 * 24 * 60 * 60 * 1000;
+  if(p.lastWithdrawal && (now - p.lastWithdrawal) < cooldownMs) {
+    const daysLeft = Math.ceil((cooldownMs - (now - p.lastWithdrawal)) / (1000 * 60 * 60 * 24));
+    return alert(`Cooldown Active!\n${p.charname} must wait ${daysLeft} more days before withdrawing again.`);
+  }
+  
+  if(!confirm(`Withdraw ${amount.toLocaleString()}c for ${p.charname}?\n\nREALITY CHECK:\nTikTok takes a 50% cut.\nThey will only receive ${Math.floor(amount/2).toLocaleString()}c in actual value.`)) return;
+  
+  p.walletBalance -= amount;
+  p.lastWithdrawal = now;
+  p.transactions.unshift({ date: new Date().toLocaleDateString(), amount: -amount, reason: 'Real-world Payout (50% Taxed)' });
+  addLog({type:'action', who:p.charname, what:`Withdrew ${amount.toLocaleString()}c from the Moon Squad Bank.`});
+  saveAll(); render();
+}
+
+function massRaidPayout() {
+  const amountStr = prompt("Enter total Raid Pot to distribute (e.g., 30000):");
+  if(!amountStr) return;
+  const amount = parseInt(amountStr);
+  if(isNaN(amount) || amount <= 0) return;
+  
+  const alive = STATE.players.filter(p => !p.isDead);
+  if(alive.length === 0) return alert("No surviving players to pay.");
+  
+  const split = Math.floor(amount / alive.length);
+  if(!confirm(`Split ${amount.toLocaleString()}c among ${alive.length} players?\nEach player will receive ${split.toLocaleString()}c in their wallet.`)) return;
+  
+  alive.forEach(p => {
+      initWallet(p);
+      p.walletBalance += split;
+      p.transactions.unshift({ date: new Date().toLocaleDateString(), amount: split, reason: 'Raid Split Pot' });
+  });
+  
+  addLog({type:'gift', who:'Moon Squad', what:`Raid Pot of ${amount.toLocaleString()}c was split. (${split.toLocaleString()}c each).`});
+  saveAll(); render();
+}
+
+function renderBank() {
+  STATE.players.filter(p => !p.isDead).forEach(initWallet);
+  const alivePlayers = STATE.players.filter(p => !p.isDead).sort((a,b) => b.walletBalance - a.walletBalance);
+
+  return `
+    <div class="card-glow" style="border-color:var(--gold)60; background:rgba(20,15,5,0.8)">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+        <div class="section-title" style="color:var(--gold); margin-bottom:0">🏦 MOON SQUAD BANK</div>
+        <button class="btn btn-sm btn-purple" onclick="massRaidPayout()">⚔️ Mass Raid Payout</button>
+      </div>
+      <div class="info-bar" style="border-color:var(--gold)40; color:#fff">
+        Track player wealth. Withdrawals carry a strict 5k minimum, 44.9k maximum, and a 1-week cooldown.
+      </div>
+      
+      <div class="section-title" style="margin-top:15px">Master Ledger</div>
+      ${alivePlayers.length === 0 ? '<div class="empty-state">No active accounts.</div>' : alivePlayers.map(p => {
+        const isCooldown = p.lastWithdrawal && (Date.now() - p.lastWithdrawal) < (7 * 24 * 60 * 60 * 1000);
+        return `
+        <div class="card" style="border-left:4px solid var(--gold); padding:10px; margin-bottom:8px">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <div>
+              <div style="font-weight:bold; font-size:1.1rem; color:#fff">${esc(p.charname)}</div>
+              <div style="font-size:0.65rem; color:var(--dim)">@${esc(p.username)}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:1.2rem; font-weight:bold; color:var(--gold)">🪙 ${p.walletBalance.toLocaleString()}</div>
+              ${isCooldown ? '<div style="font-size:0.55rem; color:var(--red)">⏳ Cooldown Active</div>' : '<div style="font-size:0.55rem; color:var(--green)">✓ Withdrawal Ready</div>'}
+            </div>
+          </div>
+          
+          <div style="display:flex; gap:5px; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05)">
+             <button class="btn btn-sm" style="flex:1; border-color:var(--gold); color:var(--gold)" onclick="const amt = prompt('Amount to ADD:'); if(amt && !isNaN(amt)) adjWallet(${p.id}, parseInt(amt), 'Manual Deposit')">+ Add</button>
+             <button class="btn btn-sm" style="flex:1; border-color:var(--red); color:var(--red)" onclick="const amt = prompt('Amount to DEDUCT:'); if(amt && !isNaN(amt)) adjWallet(${p.id}, -parseInt(amt), 'Manual Deduction')">- Deduct</button>
+             <button class="btn btn-sm btn-purple" style="flex:2" onclick="processWithdrawal(${p.id})">💳 Withdraw Payout</button>
+          </div>
+        </div>
+      `}).join('')}
+    </div>
+  `;
+}
 
 function renderRaids() {
   const locs = Object.entries(RAID_LOCATIONS);
@@ -3737,22 +3892,7 @@ function resolveTheft(loserName) {
   }
 }//
 
-function logBattleResult() {
-  const c1 = parseInt(STATE.battleCoins1) || 0;
-  const c2 = parseInt(STATE.battleCoins2) || 0;
-  if (c1 === c2) return alert("It's a tie! No clear winner.");
-  
-  const winner = c1 > c2 ? STATE.battleP1 : STATE.battleP2;
-  const loser = c1 > c2 ? STATE.battleP2 : STATE.battleP1;
-  const diff = Math.abs(c1 - c2);
-  
-  if(STATE.sessionActive) {
-    addLog({type:'battle', who:'Box Battle', what:`${winner} DEFEATED ${loser} by a gap of ${diff.toLocaleString()} coins!`});
-    alert("Battle officially logged!");
-  } else {
-    alert("Start a live session to log this battle.");
-  }
-}//
+
 
 
 
