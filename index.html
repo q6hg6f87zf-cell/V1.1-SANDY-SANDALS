@@ -1759,8 +1759,11 @@ const STATE = {
   tab: 'players',
   compendiumTab: 'races', 
   rulesTab: 'economy',    
+    rosterTab: 'living',
+  orphanedCompanions: load('orphaned', []),
   players: load('players', []),
   sessionLog: load('session_log', []),
+
   sessionActive: load('session_active', false),
   sessionNumber: load('session_number', 1),
   sessionStartTime: load('session_start_time', null),
