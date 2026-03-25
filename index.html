@@ -1820,6 +1820,8 @@ const STATE = {
 
 function saveAll() {
   save('players', STATE.players); save('session_log', STATE.sessionLog); save('session_active', STATE.sessionActive); save('session_number', STATE.sessionNumber); save('session_start_time', STATE.sessionStartTime); save('map_pins', STATE.mapPins); save('map_events', STATE.mapEvents); save('map_danger', STATE.mapDanger); save('raid_history', STATE.raidHistory); save('base_rooms', STATE.baseRooms); save('base_residents', STATE.baseResidents); save('base_defense', STATE.baseDefense); save('vaults', STATE.vaults); save('packs', STATE.packs); save('villains_live', STATE.villainsLive); save('custom_villains', STATE.customVillains); 
+save('orphaned', STATE.orphanedCompanions);
+
 }
 
 function addLog(entry) {
